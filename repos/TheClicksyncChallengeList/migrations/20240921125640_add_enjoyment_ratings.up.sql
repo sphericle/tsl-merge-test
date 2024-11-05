@@ -1,4 +1,4 @@
-/* ALTER TABLE IF EXISTS public.records
+ALTER TABLE IF EXISTS public.records
     ADD COLUMN enjoyment integer;
 
 ALTER TABLE IF EXISTS public.records
@@ -9,5 +9,3 @@ ALTER TABLE IF EXISTS public.rec_backup
 
 ALTER TABLE IF EXISTS public.rec_backup
     ALTER COLUMN enjoyment SET STORAGE PLAIN;
-
- */
