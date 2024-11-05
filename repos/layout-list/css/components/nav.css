@@ -1,0 +1,89 @@
+:root {
+    --color-background: white;
+    --color-on-background: black;
+    --color-primary: black;
+    --color-on-primary: white;
+}
+
+.nav {
+    display: flex;
+    column-gap: 2rem;
+    
+}
+.nav .nav__tab {
+    padding-top: 4px;
+    border-bottom: 4px solid transparent;
+    display: flex;
+    align-items: center;
+    padding-inline: 0.5rem;
+    transition: border-color 200ms ease;
+}
+.nav .nav__tab.router-link-active {
+    border-color: var(--color-on-primary);
+}
+.nav .nav__tab:hover {
+    border-color: var(--color-on-primary);
+}
+.nav .nav__actions {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+.nav .nav__actions .nav__icon {
+    height: 3rem;
+    width: 3rem;
+    border: none;
+    background-color: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 200ms ease;
+}
+.nav .nav__actions .nav__icon:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+.nav .nav__actions .nav__icon img {
+    height: 1.5rem;
+}
+.nav .nav__actions .nav__cta {
+    margin-left: 2rem;
+    padding: 1rem;
+    background-color: var(--color-on-primary);
+    color: var(--color-primary);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 0.5rem 0 rgba(0, 0, 102, 0.5);
+    transition: transform 200ms ease;
+    width: fit-content;
+    white-space:nowrap;
+    
+}
+.nav .nav__actions .nav__cta:hover:not(:active) {
+    transform: translateY(-2px);
+}
+.nav__actions2 {
+    margin-bottom: 30px;
+}
+.nav .nav__actions2 {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+.nav .nav__actions2 .nav__cta2 {
+    margin-left: 1rem;
+    padding: 0.75rem;
+    background-color: var(--color-background);
+    color: var(--color-on-background);
+    border-radius: 0.5rem;
+}
+.nav .nav__actions2 .nav__cta2:hover:not(:active) {
+    background-color: var(--color-background-hover);
+    color: var(--color-on-background-hover);
+}
+.nav .nav__actions2 .nav__cta2.router-link-active {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
