@@ -1,8 +1,8 @@
 import json, requests
 
-path = "repos/layout-list/data/"
-list_index_result = "_list.json"
-benchmark = "_"
+path = 'repos/layout-list/data/'
+list_index_result = '_list.json'
+benchmark = '_'
 rank = 0
 
 with open(path + list_index_result) as json_file:
@@ -17,15 +17,15 @@ for levelpath in list:
     
         level['rank'] = rank
         data = {
-            'name': level.name,
+            'name': level['name'],
             'position': rank,
-            'requirement': level.percentToQualify,
-            'verifier': level.verifier,
-            'publisher': level.author,
-            'creators': level.creators,
-            'video': level.verification
+            'requirement': level['percentToQualify'],
+            'verifier': level['verifier'],
+            'publisher': level['author'],
+            'creators': level['creators'],
+            'video': level['verification']
         }
         
         print(data)
         
-        requests.post('https://127.0.0.1/api/v2/demons/', data=data,)
+        requests.post('https://127.0.0.1:8001/api/v2/demons/', data=data,)
