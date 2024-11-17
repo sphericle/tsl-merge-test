@@ -12,7 +12,7 @@ def trimString(str):
     return str
 
 paths = []
-initGet = requests.get('https://cscl.shuttleapp.rs/api/v2/demons?limit=3')
+initGet = requests.get('https://cscl.shuttleapp.rs/api/v2/demons?limit=100')
 response = initGet.content
 listdata = json.loads(response)
 minLevel = listdata[0]
