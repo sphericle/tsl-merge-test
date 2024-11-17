@@ -1,6 +1,10 @@
 import json, requests
+from dotenv import dotenv_values
+
+env = dotenv_values(".env")
 
 path = 'repos/layout-list/data/'
+base_url = 'http://127.0.0.1:8001/'
 list_index_result = '_list.json'
 benchmark = '_'
 rank = 0
@@ -16,16 +20,26 @@ for levelpath in list:
         level = json.load(level_file)
     
         level['rank'] = rank
-        data = {
+        newform = {
             'name': level['name'],
             'position': rank,
+            'creators': level['creators'],
             'requirement': level['percentToQualify'],
             'verifier': level['verifier'],
             'publisher': level['author'],
-            'creators': level['creators'],
             'video': level['verification']
         }
         
-        print(data)
+        print(newform)
         
-        requests.post('https://127.0.0.1:8001/api/v2/demons/', data=data,)
+        req = requests.post(
+            base_url + 'api/v2/demons', 
+            data=newform, 
+            headers={
+                'Authorization': 'Bearer ' + env['AUTH'],
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        )
+        
+        print(req.content)
