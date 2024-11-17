@@ -12,7 +12,7 @@ def trimString(str):
     return str
 
 paths = []
-initGet = requests.get('https://cscl.shuttleapp.rs/api/v2/demons?limit=100')
+initGet = requests.get('https://cscl.shuttleapp.rs/api/v2/demons?limit=3')
 response = initGet.content
 listdata = json.loads(response)
 minLevel = listdata[0]
@@ -37,35 +37,43 @@ for minLevel in listdata:
         creators.append(creator['name'])
         
     for record in level['records']:
-        recordBody = {
-            'user': record['player']['name'],
-            'link': record['video'],
-            'percent': record['progress'],
-            'hz': 240,
-            'enjoyment': record['enjoyment']
-        }
+        recordBody = {}
+        if record['enjoyment'] != None:
+            recordBody = {
+                'user': record['player']['name'],
+                'link': record['video'],
+                'percent': record['progress'],
+                'hz': 240,
+                'enjoyment': record['enjoyment']
+            }
+        else:
+            recordBody = {
+                'user': record['player']['name'],
+                'link': record['video'],
+                'percent': record['progress'],
+                'hz': 240
+            }
         records.append(recordBody)
         
     body = {
-        'id': level['id'],
+        'id': level['level_id'],
         'name': level['name'],
         'author': level['publisher']['name'], # python the goat!!!
         'creators': creators,
-        'verifier': level['verifier'],
+        'verifier': level['verifier']['name'],
         'verification': level['video'],
         'percentToQualify': level['requirement'],
         'song': 'wip',
-        'songLink': 'wip2',
         'difficulty': 1,
         'records': records
     }
     
-    path = trimString(body['name']) + '.json'
+    path = trimString(body['name'])
     indexpos = level['position'] - 1
     print(indexpos)
     paths.insert(indexpos, path)
     
-    with open('repos/layout-list/data/' + path, 'w') as f:
+    with open('repos/layout-list/data/' + path + '.json', 'w') as f:
         f.write(json.dumps(body))
         f.close()
     print('done')
