@@ -1,8 +1,10 @@
 import { store } from '../main.js';
-import { embed, rgbaBind, localize } from '../util.js';
-import { score, lightPackColor, darkPackColor } from '../config.js';
+import { embed, rgbaBind, localize, copyURL } from '../util.js';
+import { score, lightPackColor, darkPackColor} from '../config.js';
 import { fetchStaff, averageEnjoyment, fetchHighestEnjoyment, fetchLowestEnjoyment, fetchTotalScore, fetchTierLength, fetchTierMinimum } from '../content.js';
 import Spinner from '../components/Spinner.js';
+import Copy from '../components/Copy.js'
+import Copied from '../components/Copied.js'
 import LevelAuthors from '../components/List/LevelAuthors.js';
 
 const roleIconMap = {
@@ -15,32 +17,46 @@ const roleIconMap = {
 
 
 export default {
-    components: { Spinner, LevelAuthors },
+    components: { Spinner, LevelAuthors, Copy, Copied },
     template: `
         <main v-if="loading">
             <Spinner></Spinner>
         </main>
         <main v-else class="page-list">
-            <div class="list-container">
-                <table class="list" v-if="list">
-                    <tr v-for="([err, rank, level], i) in list">
-                        <td class="rank">
-                            <p v-if="rank === null" class="type-label-lg">&mdash;</p>
-                            <p v-else class="type-label-lg">#{{ rank }}</p>
-                        </td>
-                        <td class="level" :class="{ 'active': selected == i, 'error': err !== null }">
-                            <button @click="selected = i">
-                                <span class="type-label-lg">{{ level?.name || 'Error (' + err + '.json)' }}</span>
-                            </button>
-                        </td>
-                    </tr>
-                </table>
-            </div>
+        <div class="list-container">
+            <input
+            type="text"
+            class="search"
+            id="search-bar"
+            placeholder="Search..."
+            v-model="searchQuery"
+            />
+            <table class="list" v-if="filteredLevels.length > 0">
+                <tr v-for="({ item: [err, rank, level], index }, i) in filteredLevels" :key="index">
+                    <td class="rank">
+                        <p v-if="rank === null" class="type-label-lg" style="width:2.7rem">&mdash;</p>
+                        <p v-else class="type-label-lg" style="width:2.7rem">#{{ rank }}</p>
+                    </td>
+                    <td class="level" :class="{ 'active': selected == index, 'error': err !== null }">
+                        <button @click="selected = index; copied = false">
+                            <span class="type-label-lg">{{ level?.name || 'Error (' + err + '.json)' }}</span>
+                        </button>
+                    </td>
+                </tr>
+            </table>
+            <p class="level" style="padding:1.1rem" v-else>No levels found.</p>
+        </div>
             <div class="level-container">
                 <div class="level" v-if="level && level.id!=0">
-                    <h1>{{ level.name }}</h1>
+                    <div class="copy-container">
+                            <h1 class="copy-name">  
+                                {{ level.name }}
+                            </h1>
+                            <Copy v-if="!copied" @click="copyURL('https://laylist.pages.dev/#/level/' + level.path); copied = true"></Copy>
+                            <Copied v-if="copied" @click="copyURL('https://laylist.pages.dev/#/level/' + level.path); copied = true"></Copied>
+                        </div>
                     <div class="pack-container" v-if="level.packs.length > 1 || level.packs.length !== 0 && level.packs[0].levels">
-                        <div class="pack" v-for="pack in level.packs" :style="{ 'background': store.dark ? rgbaBind(darkPackColor(pack.difficulty), 0.2) : rgbaBind(lightPackColor(pack.difficulty), 0.3), 'display': !pack.levels ? 'none' : 'inherit' }">{{ pack.name }}</div>
+                        <a class="pack" v-for="pack in level.packs" :style="{ 'background': store.dark ? rgbaBind(darkPackColor(pack.difficulty), 0.2) : rgbaBind(lightPackColor(pack.difficulty), 0.3), 'display': !pack.levels ? 'none' : 'inherit' }" :href="'https://laylist.pages.dev/#/packs/pack/' + pack.name.toLowerCase().replaceAll(' ', '_')">{{ pack.name }}</a>
                     </div>
                     <LevelAuthors :author="level.author" :creators="level.creators" :verifier="level.verifier"></LevelAuthors>
                     <h3>Difficulty: {{["Beginner", "Easy", "Medium", "Hard", "Insane", "Mythical", "Extreme", "Supreme", "Ethereal", "Legendary", "Silent", "Impossible"][level.difficulty]}} layout</h3>
@@ -60,7 +76,7 @@ export default {
                         </li>
                         <li>
                             <div class="type-title-sm">ID</div>
-                            <p>{{ level.id }}</p>
+                            <p style="cursor: pointer" @click="copyURL(level.id)">{{ level.id }}</p>
                         </li>
                         <li>
                             <div class="type-title-sm">Password</div>
@@ -74,7 +90,9 @@ export default {
                     <ul class="stats">
                         <li>
                             <div class="type-title-sm">Song</div>
-                            <p><a target="_blank" :href="(level.songLink===undefined)?'#':level.songLink" :style="{'text-decoration':(level.songLink===undefined)?'none':'underline'}">{{ level.song || 'insert here' }}</a></p>
+
+                            <p v-if="level.songLink"><a target="_blank" :href="level.songLink" style="text-decoration: underline">{{ level.song || 'Song missing, please alert a list mod!' }}</a></p>
+                            <p v-else>{{ level.song || 'Song missing, please alert a list mod!' }}</p>
                         </li>
                     </ul>
                     <h2>Records ({{ level.records.length }})</h2>
@@ -101,20 +119,17 @@ export default {
                         </tr>
                     </table>
                 </div>
-                <div v-else-if="level.id==0" class="level" style="height: 100%; justify-content: center; align-items: center;">
+                <div v-else-if="level?.id==0" class="tier" style="height: 100%; justify-content: center; align-items: center;">
                     <h1>{{ level.name }}</h1>
-                    <h2 style="padding:1rem;">Total Score: {{ localize(fetchTotalScore(list, level.difficulty)) }}</h2> 
-                    <table class="records">
-                        <tr class="record">
-                            <td><h3 class="tier-info tier-info-header">Highest enjoyment: </h3></td>
-                            <td><h3 class="tier-info">{{ fetchHighestEnjoyment(list, level.difficulty) }}</h3></td>
-                        </tr> 
-                        <tr class="record">
-                            <td><h3 class="tier-info tier-info-header">Lowest enjoyment: </h3></td>
-                            <td><h3 class="tier-info">{{ fetchLowestEnjoyment(list, level.difficulty) }}</h3></td>
-                        </tr>
-                    </table>
-                    <p style="padding-top:1.5rem">The levels below are {{ level.name.replace("(", "").replace(")", "") }}.</p>
+                    <h2 style="padding-top:1rem"># of levels in tier: {{ fetchTierLength(list, level.difficulty) }}</h2>
+                    <h2 style="padding-bottom:1rem">Points in tier: {{ localize(fetchTotalScore(list, level.difficulty)) }}</h2>
+                    <tr style="justify-content: center; align-items: center;">
+                        <td><h3 class="tier-info">Highest enjoyment: {{ fetchHighestEnjoyment(list, level.difficulty) }}</h3></td>
+                    </tr>
+                    <tr style="justify-content: center; align-items: center;">
+                        <td><h3 class="tier-info" style="padding-bottom:0.5rem">Lowest enjoyment: {{ fetchLowestEnjoyment(list, level.difficulty) }}</h3></td>
+                    </tr>
+                    <p style="padding-top:1.5rem">The levels below are {{ ["beginner", "easy", "medium", "hard", "insane", "mythical", "extreme", "supreme", "ethereal", "legendary", "silent", "impossible"][level.difficulty] }} layouts.</p>
                 </div>
                 <div v-else class="level" style="height: 100%; justify-content: center; align-items: center;">
                     <p>(ノಠ益ಠ)ノ彡┻━┻</p>
@@ -141,16 +156,16 @@ export default {
                     </template>
                     <hr width="100%" color = black size="4">
                     <h3>Tags</h3>
-                    <p>
-                        (⭐ Rated )
-                        (✨ Subject to Exemptions )
-                        (💫 Accepted Under Old Standards )
-                        (🎖️ Creator Contest Winner)
-                        (❌ Pending Removal )
-                    </p>
+
+                    <p style="cursor:pointer;" @click="searchQuery = '⭐'">⭐ Rated</p>
+                    <p style="cursor:pointer;" @click="searchQuery = '✨'">✨ Subject to Exemptions</p>
+                    <p style="cursor:pointer;" @click="searchQuery = '💫'">💫 Accepted Under Old Standards</p>
+                    <p style="cursor:pointer;" @click="searchQuery = '🎖️'">🎖️ Creator Contest Winner</p>
+                    <p style="cursor:pointer;" @click="searchQuery = '❌'">❌ Pending Removal</p>
+
                     <hr width="100%" color = black size="4">
                     <h3>Record Submission Requirements</h3>
-                    <div class="record-guidelines">
+                    <div class="right-text">
                         <p>
                             You must have achieved the record without using hacks (including hacks that change the physics of the game, ie. physics bypass via MegaHack, however, "Click Between Frames" is allowed).
                         </p>
@@ -178,45 +193,49 @@ export default {
                     </div>
                     <hr width="100%" color = black size="4">
                     <h3>Difficulty Rankings</h3>
-                    <p>
-                        Impossible Layout = Top Extreme Demons (401 to 750 Points)
-                    </p>
-                    <p>
-                        Legendary Layout = Mid Extreme Demons (201 to 400 Points)
-                    </p>
-                    <p>
-                        Extreme Layout = Beginner Extreme Demons (101 to 200 Points)
-                    </p>
-                    <p>
-                        Mythical Layout = High Insane Demons (71 to 100 Points)
-                    </p>
-                    <p>
-                        Insane Layout = Insane Demons (41 to 70 Points)
-                    </p>
-                    <p>
-                        Hard Layout = Hard Demons (21 to 40 Points)
-                    </p>
-                    <p>
-                        Medium Layout = Medium Demons (11 to 20 Points)
-                    </p>
-                    <p>
-                        Easy Layout = Easy Demons (6 to 10 Points)
-                    </p>
-                    <p>
-                        Beginner Layout = Non Demons (1 to 5 Points)
-                    </p>
+                    <div class="right-text">
+                        <p>
+                            Impossible Layout = Top Extreme Demons (401 to 750 Points)
+                        </p>
+                        <p>
+                            Legendary Layout = Mid Extreme Demons (201 to 400 Points)
+                        </p>
+                        <p>
+                            Extreme Layout = Beginner Extreme Demons (101 to 200 Points)
+                        </p>
+                        <p>
+                            Mythical Layout = High Insane Demons (71 to 100 Points)
+                        </p>
+                        <p>
+                            Insane Layout = Insane Demons (41 to 70 Points)
+                        </p>
+                        <p>
+                            Hard Layout = Hard Demons (21 to 40 Points)
+                        </p>
+                        <p>
+                            Medium Layout = Medium Demons (11 to 20 Points)
+                        </p>
+                        <p>
+                            Easy Layout = Easy Demons (6 to 10 Points)
+                        </p>
+                        <p>
+                            Beginner Layout = Non Demons (1 to 5 Points)
+                        </p>
+                    </div>
                     <hr width="100%" color = black size="4">
-                    <p>
-                        For your convenience, the Layout List caches the data for the list in your browser.
-                    </p>
-                    <p>
-                        By using the site, you agree to the storage of this data in your browser. 
-                        You can disable this in your browser's settings (turn off local storage), however this will cause 
-                        the site to load very slowly and is not recommended.
-                    </p>
-                    <p>
-                        No data specific to you is collected or shared, and you can <u><a target="_blank" href="https://github.com/layout-list/layout-list/">view the site's source code here</a></u>.
-                    </p>
+                    <div class="right-text">
+                        <p>
+                            For your convenience, the Layout List caches the data for the list in your browser.
+                        </p>
+                        <p>
+                            By using the site, you agree to the storage of this data in your browser. 
+                            You can disable this in your browser's settings (turn off local storage), however this will cause 
+                            the site to load very slowly and is not recommended.
+                        </p>
+                        <p>
+                            No data specific to you is collected or shared, and you can <u><a target="_blank" href="https://github.com/layout-list/layout-list/">view the site's source code here</a></u>.
+                        </p>
+                    </div>
                 </div>
             </div>
         </main>
@@ -228,10 +247,12 @@ export default {
         listlevels: 0,
         staff: [],
         errors: [],
-        selected: 0,
+        selected: 1,
         toggledShowcase: false,
         roleIconMap,
         store,
+        searchQuery: '',
+        copied: false,
     }),
 
     methods: {
@@ -246,10 +267,12 @@ export default {
         fetchTotalScore,
         fetchTierLength,
         localize,
+        copyURL
     },
 
     computed: {
         level() {
+
             return this.list && this.list[this.selected] && this.list[this.selected][2];
         },
         video() {
@@ -263,12 +286,40 @@ export default {
                     : this.level.verification
             );
         },
+
+        filteredLevels() {
+            if (!this.searchQuery.trim()) {
+                // Return the list with original indexes
+                return this.list.map((item, index) => ({ index, item }));
+            }
+    
+            const query = this.searchQuery.toLowerCase();
+    
+            // Map each item with its original index and filter by the level name
+            return this.list
+                .map((item, index) => ({ index, item }))
+                .filter(({ item: [err, rank, level] }) =>
+                    (level?.name.toLowerCase())
+                        .includes(query) &&
+                    level?.id !== 0
+                );
+        },
     },
 
     async mounted() {
         // Fetch list from store
         this.list = this.store.list;
         this.staff = await fetchStaff();
+
+        if (this.$route.params.level) {
+            const returnedIndex = this.list.findIndex(
+                ([err, rank, lvl]) => 
+                    lvl.path === this.$route.params.level 
+            );
+            
+            if (returnedIndex === -1) this.errors.push(`The level ${this.$route.params.level} does not exist, please double check the URL.`);
+            else this.selected = returnedIndex;
+        }
 
         // Error handling
         if (!this.list) {
@@ -287,20 +338,32 @@ export default {
         // Hide loading spinner
         this.loading = false;
 
-        // tests for incorrect difficulties
-        let max = fetchTierMinimum(this.list, 0)
+        // tests for incorrect difficulties and duplicate records
         let i = 0
         let currentdiff, newdiff;
-        while (i < max) {
+        while (i < this.list.length) {
             if (this.list[i][2]) {
                 let templevel = this.list[i][2]
 
                 newdiff = templevel.difficulty 
                 if (templevel.id === 0) {
+                    if (templevel.difficulty !== currentdiff - 1 && currentdiff !== undefined) {
+                        console.error(`Found incorrect divider difficulty! Please set ${templevel.path}'s difficulty to ${currentdiff - 1}.`)
+                    }
                     currentdiff = templevel.difficulty
                 }
                 
                 if (newdiff !== currentdiff) console.warn(`Found incorrect difficulty! ${templevel.name} (${templevel.path}.json) is set to ${newdiff}, please set it to ${currentdiff}.`)
+                
+                
+                const foundusers = []
+                for (const record of templevel.records) {
+                    if (foundusers.includes(record.user) || record.user === templevel.verifier) {
+                        console.warn(`Found duplicate record! ${record.user} has a duplicate record on ${templevel.name} (${templevel.path}.json).`)
+                    } else {
+                        foundusers.push(record.user)
+                    }
+                }
             }
             i++
         }

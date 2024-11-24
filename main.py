@@ -18,18 +18,26 @@ for levelpath in list:
     
     with open(path + levelpath + '.json') as level_file:
         level = json.load(level_file)
+        
+        if level['id'] == 0:
+            continue
     
         level['rank'] = rank
+     
         newform = {
             'name': level['name'],
             'position': rank,
-            'creators': level['creators'],
             'requirement': level['percentToQualify'],
             'verifier': level['verifier'],
-            'publisher': level['author'],
             'level_id': level['id'],
             'video': level['verification'] 
         }
+        
+        # overwrite creator with publisher if creators array is empty (this is how the layout list does it)
+        level['creators'] = [level['publisher']] if level['creators'] == [] else level['creators']
+        
+            
+            
         
         req = requests.post(
             base_url + 'api/v2/demons', 
@@ -41,8 +49,43 @@ for levelpath in list:
             }
         )
         
-        headers = req.headers
-        
-        etag = headers['etag']
-        
-        
+        if req.status_code != 201:
+            print(req.text)
+            continue
+        else:
+            print('debug')        
+            link = req.headers['location']
+            id = link.split('/')[-1]
+            
+            
+            
+            for record in level['records']:
+                recordform = {
+                    'progress': record['percent'],
+                    'player': record['user'],
+                    'demon': 10,
+                    'note': 'This record was automatically merged from the old TSL template.',
+                    'video': record['link'],
+                    'status': 'APPROVED'
+                }
+                
+                if 'enjoyment' in record:
+                    recordform['enjoyment'] = record['enjoyment']
+                
+                req = requests.post(
+                    base_url + 'api/v1/records', 
+                    data=json.dumps(recordform), 
+                    headers={
+                        'Authorization': 'Bearer ' + env['AUTH'],
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                )
+                
+                if req.status_code != 200:
+                    f = open(f"error demon", "a")
+                    f.write(req.text)
+                    f.close()
+                    req.text
+                    continue
+                

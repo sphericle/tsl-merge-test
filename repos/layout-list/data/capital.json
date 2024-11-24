@@ -1,0 +1,22 @@
+{
+    "id": 96461977,
+    "name": "CAPITAL",
+    "author": "Xeronius",
+    "creators": [],
+    "verifier": "Xeronius",
+    "verification": "https://www.youtube.com/watch?v=cw3MtoCjHLU",
+    "percentToQualify": 100,
+    "song": "POSTELVIS - Capital",
+    "difficulty": 3,
+    "enjoyment": 7,
+    "records": [
+         {
+            "user": "Iza",
+            "link": "https://youtu.be/1Y_IH7jLFT0?si=lWPEd-3NryvLQXkW",
+            "percent": 100,
+            "hz": 165,
+            "mobile": false,
+            "enjoyment": 7
+        }
+    ]
+}
