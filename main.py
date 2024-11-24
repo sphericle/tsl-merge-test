@@ -27,14 +27,13 @@ for levelpath in list:
             'requirement': level['percentToQualify'],
             'verifier': level['verifier'],
             'publisher': level['author'],
-            'video': level['verification']
+            'level_id': level['id'],
+            'video': level['verification'] 
         }
-        
-        print(newform)
         
         req = requests.post(
             base_url + 'api/v2/demons', 
-            data=newform, 
+            data=json.dumps(newform), 
             headers={
                 'Authorization': 'Bearer ' + env['AUTH'],
                 'Content-Type': 'application/json',
@@ -42,4 +41,8 @@ for levelpath in list:
             }
         )
         
-        print(req.content)
+        headers = req.headers
+        
+        etag = headers['etag']
+        
+        
