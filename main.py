@@ -16,6 +16,8 @@ for levelpath in list:
     print(levelpath)
     rank += 1
     
+    if levelpath.startswith(benchmark):
+        continue
     with open(path + levelpath + '.json') as level_file:
         level = json.load(level_file)
         
