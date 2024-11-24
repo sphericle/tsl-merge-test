@@ -52,16 +52,19 @@ for levelpath in list:
         )
         
         if req.status_code != 201:
-            print(req.text)
+            f = open(f"error demon {id}", "a")
+            f.write(req.text)
+            f.write('\n\n')
+            f.close()
             continue
-        else:
-            print('debug')        
+        else:   
             link = req.headers['location']
             id = link.split('/')[-1]
             
             
-            
+            recordi = 0
             for record in level['records']:
+                recordi += 1
                 recordform = {
                     'progress': record['percent'],
                     'player': record['user'],
@@ -85,9 +88,9 @@ for levelpath in list:
                 )
                 
                 if req.status_code != 200:
-                    f = open(f"error demon", "a")
+                    f = open(f"error demon {id} record {recordi}", "a")
                     f.write(req.text)
+                    f.write('\n\n')
                     f.close()
-                    req.text
                     continue
                 
