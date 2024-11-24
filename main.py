@@ -105,5 +105,5 @@ for levelpath in list:
     except Exception as error:
         print('error, skipping file...')
         f = open(f"errors/error file {levelpath}.json", "a")
-        f.write(error)
+        f.write(str(error))
         f.close()
