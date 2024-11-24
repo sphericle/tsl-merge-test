@@ -13,7 +13,7 @@ with open(path + list_index_result) as json_file:
     list = json.load(json_file)
 
 for levelpath in list:
-    print(levelpath) + ".json"
+    print(levelpath)
     if levelpath.startswith(benchmark):
         print("Skipping...")
         continue
