@@ -80,7 +80,6 @@ for levelpath in list:
             else:   
                 # link will look like: api/v2/demons/{id}
                 link = req.headers['location']
-                print(link)
                 # extract the id from the link
                 id = int([segment for segment in link.split('/') if segment][-1])
                 
@@ -107,6 +106,7 @@ for levelpath in list:
                             else:
                                 recordform['enjoyment'] = record['enjoyment']
                             
+                    print(f'record #{recordi}: {record["user"]}')
                     req = requests.post(
                         base_url + 'api/v1/records', 
                         data=json.dumps(recordform), 
@@ -123,6 +123,7 @@ for levelpath in list:
                     if req.status_code != 200:
                         # the error could be because the player is spelt differently
                         # try to ask the server what the correct spelling should be
+                        print('failed, checking for duplicate name')
                         req2 = requests.get(
                             base_url + 'api/v1/players?name=' + record['user'],
                             headers={
@@ -137,8 +138,10 @@ for levelpath in list:
                         
                         # if the response returned a player
                         if (len(playerinfo) > 0):
+                            newplayer = playerinfo[0]['name']
+                            print(f'name found: {newplayer}')
                             # use the first returned player's name in the record form
-                            recordform['player'] = playerinfo[0]['name']
+                            recordform['player'] = newplayer
                             
                             # resubmit the record with the corrected name
                             # dont even try to tell me this is trash bc idc
