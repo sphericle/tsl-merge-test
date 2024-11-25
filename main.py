@@ -91,7 +91,6 @@ for levelpath in list:
                         'progress': record['percent'],
                         'player': record['user'],
                         'demon': id,
-                        'note': 'This record was automatically merged from the old TSL template.',
                         'video': record['link'],
                         'status': 'APPROVED'
                     }
@@ -99,12 +98,8 @@ for levelpath in list:
                     # if the enjoyment field exists and is not "?"
                     if 'enjoyment' in record:
                         if record['enjoyment'] != "?": # shut up
-                            # if we're here, the enjoyment must look something like: "{num}" (in quotes)
-                            if type(record['enjoyment']) == "string":
-                                # if the enjoyment is a string for some reason (TANGIIII!!!!!) convert it to integer and add it to the format
-                                recordform['enjoyment'] = int(record['enjoyment'])
-                            else:
-                                recordform['enjoyment'] = record['enjoyment']
+                            # in case the enjoyment is a string for some reason (TANGIIII!!!!!) convert it to integer and add it to the format
+                            recordform['enjoyment'] = int(record['enjoyment'])
                             
                     print(f'record #{recordi}: {record["user"]}')
                     req = requests.post(
@@ -136,16 +131,23 @@ for levelpath in list:
                         # load the response
                         playerinfo = json.loads(req2.content)
                         
+                        if record['user'] == "Hydraniac" and recordi == 1:
+                            print('this is the very first record, no players found (HYDRAAAAA)')
+                            f = open(f"errors/error demon {id} record {recordi}.json", "a")
+                            f.write('video not supported')
+                            f.write('\n\n')
+                            f.write(json.dumps(recordform))
+                            f.close()
                         # if the response returned a player
-                        if (len(playerinfo) > 0):
+                        elif (len(playerinfo) > 0):
                             newplayer = playerinfo[0]['name']
-                            print(f'name found: {newplayer}')
+                            print(f'name found: {newplayer}, retrying...')
                             # use the first returned player's name in the record form
                             recordform['player'] = newplayer
                             
                             # resubmit the record with the corrected name
                             # dont even try to tell me this is trash bc idc
-                            req = requests.post(
+                            req3 = requests.post(
                                 base_url + 'api/v1/records', 
                                 data=json.dumps(recordform), 
                                 headers={
@@ -155,10 +157,13 @@ for levelpath in list:
                                 }
                             )
                             
+                            print(req3.status_code)
+                            
                             # if the request still did not result in 200 OK
-                            if req.status_code != 200:
+                            if req3.status_code != 200:
+                                print('failed again, logging...')
                                 f = open(f"errors/error demon {id} record {recordi}.json", "a")
-                                f.write(req.text)
+                                f.write(req3.text)
                                 f.write('\n\n')
                                 f.write(json.dumps(recordform))
                                 f.close()
