@@ -47,7 +47,7 @@ export default {
                             </a>
                             <div class="meta">
                                 <p>#{{ level.rank }}</p>
-                                <h2>{{ level.name }}</h2>
+                                <h2><a :href="'https://laylist.pages.dev/#/level/' + level.path" target="_blank">{{ level.name }}</a></h2>
                                 <p style="color: #00b54b; font-weight: 700">{{ progression[i] }}%</p>
                             </div>
                         </div>
@@ -57,8 +57,26 @@ export default {
                                 <img :src="getThumbnailFromId(getYoutubeIdFromUrl(currentLevel.video))" alt="">
                             </a>
                             <div class="meta">
-                                <p>#{{ currentLevel.rank }}</p>
-                                <h2>{{ currentLevel.name }}</h2>
+                                <div class="copy-container">
+                                    <p class="copy-name">
+                                        #{{ currentLevel.rank }}
+                                    </p>
+
+                                    <!-- nong tooltip -->
+                                    <div style="float: right;" class="tooltip" v-if="currentLevel.songlink !== null">
+                                        <p style="cursor: pointer;">(NONG)</p>
+
+                                        <p style="text-decoration: underline;">
+                                            <a
+                                                class="tooltiptext"
+                                                :href="currentLevel.songlink"
+                                                target="_blank"
+                                                >{{ currentLevel.songname }}
+                                            </a>
+                                        </p>
+                                    </div>
+                                </div>
+                                <h2><a :href="'https://laylist.pages.dev/#/level/' + currentLevel.path" target="_blank">{{ currentLevel.name }}</a></h2>
                                 <p>{{ currentLevel.id }}</p>
                             </div>
                             <form class="actions" v-if="!givenUp">
@@ -82,7 +100,7 @@ export default {
                                 </a>
                                 <div class="meta">
                                     <p>#{{ level.rank }}</p>
-                                    <h2>{{ level.name }}</h2>
+                                    <h2><a :href="'https://laylist.pages.dev/#/level/' + level.path" target="_blank">{{ level.name }}</a></h2>
                                     <p style="color: #d50000; font-weight: 700">{{ currentPercentage + 2 + i }}%</p>
                                 </div>
                             </div>
@@ -136,7 +154,7 @@ export default {
             if (fullList.filter(([err, _]) => err).length > 0) {
                 this.loading = false;
                 this.showToast(
-                    'List is currently broken. Wait until it\'s fixed to start a roulette.',
+                    'The list is currently broken. Wait until it\'s fixed to start a roulette.',
                 );
                 return;
             }
@@ -146,7 +164,11 @@ export default {
                 id: lvl.id,
                 name: lvl.name,
                 video: lvl.verification,
+                path: lvl.path,
+                songname: lvl.song ? lvl.song : null,
+                songlink: lvl.songLink ? lvl.songLink : null,
             }));
+            
             const list = [];
             if (this.useMainList) {
                 list.push(...fullListMapped.slice(0, 100));

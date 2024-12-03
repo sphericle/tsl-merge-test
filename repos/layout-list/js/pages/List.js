@@ -1,7 +1,7 @@
 import { store } from '../main.js';
 import { embed, rgbaBind, localize, copyURL } from '../util.js';
 import { score, lightPackColor, darkPackColor} from '../config.js';
-import { fetchStaff, averageEnjoyment, fetchHighestEnjoyment, fetchLowestEnjoyment, fetchTotalScore, fetchTierLength, fetchTierMinimum } from '../content.js';
+import { averageEnjoyment, fetchHighestEnjoyment, fetchLowestEnjoyment, fetchTotalScore, fetchTierLength } from '../content.js';
 import Spinner from '../components/Spinner.js';
 import Copy from '../components/Copy.js'
 import Copied from '../components/Copied.js'
@@ -49,12 +49,12 @@ export default {
             <div class="level-container">
                 <div class="level" v-if="level && level.id!=0">
                     <div class="copy-container">
-                            <h1 class="copy-name">  
-                                {{ level.name }}
-                            </h1>
-                            <Copy v-if="!copied" @click="copyURL('https://laylist.pages.dev/#/level/' + level.path); copied = true"></Copy>
-                            <Copied v-if="copied" @click="copyURL('https://laylist.pages.dev/#/level/' + level.path); copied = true"></Copied>
-                        </div>
+                        <h1 class="copy-name">  
+                            {{ level.name }}
+                        </h1>
+                        <Copy v-if="!copied" @click="copyURL('https://laylist.pages.dev/#/level/' + level.path); copied = true"></Copy>
+                        <Copied v-if="copied" @click="copyURL('https://laylist.pages.dev/#/level/' + level.path); copied = true"></Copied>
+                    </div>
                     <div class="pack-container" v-if="level.packs.length > 1 || level.packs.length !== 0 && level.packs[0].levels">
                         <a class="pack" v-for="pack in level.packs" :style="{ 'background': store.dark ? rgbaBind(darkPackColor(pack.difficulty), 0.2) : rgbaBind(lightPackColor(pack.difficulty), 0.3), 'display': !pack.levels ? 'none' : 'inherit' }" :href="'https://laylist.pages.dev/#/packs/pack/' + pack.name.toLowerCase().replaceAll(' ', '_')">{{ pack.name }}</a>
                     </div>
@@ -149,19 +149,18 @@ export default {
                         <ol class="staff">
                             <li v-for="editor in staff">
                                 <img :src="'/assets/' + roleIconMap[editor.role] + (store.dark ? '-dark' : '') + '.svg'" :alt="editor.role">
-                                <a v-if="editor.link" class="type-label-lg link" target="_blank" :href="editor.link">{{ editor.name }}</a>
-                                <p v-else>{{ editor.name }}</p>
+                                <a class="type-label-lg link" target="_blank" :href="editor.link">{{ editor.name }}</a>
                             </li>
                         </ol>
                     </template>
                     <hr width="100%" color = black size="4">
                     <h3>Tags</h3>
 
-                    <p style="cursor:pointer;" @click="searchQuery = '⭐'">⭐ Rated</p>
-                    <p style="cursor:pointer;" @click="searchQuery = '✨'">✨ Subject to Exemptions</p>
-                    <p style="cursor:pointer;" @click="searchQuery = '💫'">💫 Accepted Under Old Standards</p>
-                    <p style="cursor:pointer;" @click="searchQuery = '🎖️'">🎖️ Creator Contest Winner</p>
-                    <p style="cursor:pointer;" @click="searchQuery = '❌'">❌ Pending Removal</p>
+                    <p style="cursor:pointer;" @click="search('⭐')">⭐ Rated</p>
+                    <p style="cursor:pointer;" @click="search('✨')">✨ Subject to Exemptions</p>
+                    <p style="cursor:pointer;" @click="search('💫')">💫 Accepted Under Old Standards</p>
+                    <p style="cursor:pointer;" @click="search('🎖️')">🎖️ Creator Contest Winner</p>
+                    <p style="cursor:pointer;" @click="search('❌')">❌ Pending Removal</p>
 
                     <hr width="100%" color = black size="4">
                     <h3>Record Submission Requirements</h3>
@@ -267,7 +266,26 @@ export default {
         fetchTotalScore,
         fetchTierLength,
         localize,
-        copyURL
+        copyURL,
+        // used for the ability to deselect tag filters
+        search(query) {
+            if (this.searchQuery === query) {
+                this.searchQuery = '';
+            } else {
+                this.searchQuery = query;
+            }
+        },
+        selectFromParam() {
+            if (this.$route.params.level) {
+                const returnedIndex = this.list.findIndex(
+                    ([err, rank, lvl]) => 
+                        lvl.path === this.$route.params.level 
+                );
+                
+                if (returnedIndex === -1) this.errors.push(`The level ${this.$route.params.level} does not exist, please double check the URL.`);
+                else this.selected = returnedIndex;
+            }
+        }
     },
 
     computed: {
@@ -309,17 +327,9 @@ export default {
     async mounted() {
         // Fetch list from store
         this.list = this.store.list;
-        this.staff = await fetchStaff();
-
-        if (this.$route.params.level) {
-            const returnedIndex = this.list.findIndex(
-                ([err, rank, lvl]) => 
-                    lvl.path === this.$route.params.level 
-            );
-            
-            if (returnedIndex === -1) this.errors.push(`The level ${this.$route.params.level} does not exist, please double check the URL.`);
-            else this.selected = returnedIndex;
-        }
+        this.staff = store.staff;
+        
+        this.selectFromParam()
 
         // Error handling
         if (!this.list) {
@@ -372,10 +382,12 @@ export default {
     watch: {        
         store: {
             handler(updated) {
-                this.list = updated.list
+                this.list = updated.list;
+                this.staff = updated.staff;
                 updated.errors.forEach(err => {
                     this.errors.push(`Failed to load level. (${err}.json)`);
                 })
+                this.selectFromParam()
             }, 
             deep: true
         }

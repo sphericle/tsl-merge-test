@@ -169,6 +169,22 @@
             "hz": 60,
             "mobile": true,
             "enjoyment": 8
+        },
+        {
+            "user": "Neo",
+            "link": "https://www.youtube.com/watch?v=LHqoYdb3Zp4",
+            "percent": 100,
+            "hz": 240,
+            "mobile": false,
+            "enjoyment": 8
+        },
+        {
+            "user": "Bocopter",
+            "link": "https://youtu.be/whYjzPzy-tg",
+            "percent": 100,
+            "hz": 240,
+            "mobile": true,
+            "enjoyment": 10
         }
     ]
 }
