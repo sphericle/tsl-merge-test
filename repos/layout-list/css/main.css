@@ -7,6 +7,8 @@
     --color-on-primary: white;
     --color-error: #de0000;
     --color-on-error: white;
+    --color-hover: rgb(168, 168, 168);
+    --color-on-hover: rgb(15, 15, 15);
 }
 
 main.dark,
@@ -104,4 +106,90 @@ input[type="checkbox"] {
 .cache-text.dark {
     color: white;
     opacity: 0.3;
+}
+
+
+.search {
+    border-radius: 14px;
+    border: 2px solid var(--color-background-hover);
+    width: 90%;
+    max-width: 22em;
+    height: 40px;
+    padding-left: 10px;
+    margin-bottom: 1rem;
+    margin-left: 1rem;
+    background-color: var(--color-background-hover);
+    transition: all, border 120ms ease-out;
+}
+
+.search:hover {
+    border: 2px solid var(--color-hover);
+    transition: all, border 120ms ease-out;
+}
+
+.copy-container {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.copy-name {
+    float: left;
+    padding-right: 1rem;
+}
+
+.copy {
+    float: left;
+    padding-top:0.5rem;
+    height: 2rem;
+    cursor: pointer;
+    fill: var(--color-on-background-hover);
+    opacity: 0.4;
+    transition: opacity 120ms ease-out;
+}
+
+.copy:hover {
+    opacity: 1;
+}
+
+.copied {
+    float: left;
+    padding-top:0.5rem;
+    height: 2rem;
+    cursor: pointer;
+    opacity: 1;
+    transition: opacity 120ms ease-out;
+}
+
+.right-text > p:not(:last-child)  {
+    padding-bottom:2em
+}
+
+
+/* Tooltip container */
+.tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 2px dotted var(--color-on-background);
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+  visibility: hidden;
+  overflow: auto;
+  right: 0;
+  width: max-content;
+  top: 120%;
+  background-color: #1b314f;
+  color: #fff;
+  text-align: center;
+  padding: 5px 10px 5px 10px;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 10;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+  visibility: visible;
 }

@@ -15,17 +15,17 @@ paths = []
 initGet = requests.get('https://cscl.shuttleapp.rs/api/v2/demons?limit=100')
 response = initGet.content
 listdata = json.loads(response)
-minLevel = listdata[0]
+print(listdata)
 
 with open('repos/layout-list/data/_list.json', 'r') as listfile:
-    print('writing to _list...')
     list = json.load(listfile)
     for level in list:
         paths.append(level)
     
     
 for minLevel in listdata:
-    fullReq = requests.get(f'https://cscl.shuttleapp.rs/api/v2/demons/{minLevel['id']}')
+    minLevelID = minLevel['id']
+    fullReq = requests.get(f'https://cscl.shuttleapp.rs/api/v2/demons/{minLevelID}')
     response2 = fullReq.content
     wtfpointercrate = json.loads(response2)
     level = wtfpointercrate['data']
@@ -70,18 +70,13 @@ for minLevel in listdata:
     
     path = trimString(body['name'])
     indexpos = level['position'] - 1
-    print(indexpos)
     paths.insert(indexpos, path)
+    
+    print(body)
     
     with open('repos/layout-list/data/' + path + '.json', 'w') as f:
         f.write(json.dumps(body))
         f.close()
-    print('done')
-    
-    
-print(paths)
 
-with open('repos/layout-list/data/_list.json', "w") as listfile2:
-    listfile2.write(json.dumps(paths))
-    
-print('done!')
+    with open('repos/layout-list/data/_list.json', "w") as listfile2:
+        listfile2.write(json.dumps(paths))

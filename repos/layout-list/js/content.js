@@ -21,10 +21,10 @@ export async function fetchList() {
         try {
             packsMap = await packResult.json();
         } catch (e) {
-            // pack error object [0] will always be 422
+            // pack error object [0] will always be "err"
             // [1] is the error message
             // (optional) [2] is the level name being processed while the error is thrown
-            packsMap = [422, e] 
+            packsMap = ["err", e] 
         }
 
         // Create a lookup dictionary for ranks
@@ -47,7 +47,7 @@ export async function fetchList() {
                     level["path"] = path;
                     
                     try {
-                        if (packsMap[0] !== 422) {
+                        if (packsMap[0] !== "err") {
                             packsMap.forEach((pack) => {
                                 try {
                                     if (pack.levels) { 
@@ -73,7 +73,7 @@ export async function fetchList() {
                                     }
                                 } catch (e) {
                                     console.error(`failed to fetch pack ${pack.name}:  ${e}`)
-                                    packs.push([422, e, pack.name])
+                                    packs.push(["err", e, pack.name])
                                 }
                             })
                         } else {
@@ -81,7 +81,7 @@ export async function fetchList() {
                         }
                     } catch (e) {
                         console.error(`failed to fetch packs: ${e}`)
-                        packs.push([422, e])
+                        packs.push(["err", e])
                     }
                     
                     
@@ -236,7 +236,7 @@ export async function fetchLeaderboard(list) {
 
         
         
-        // sneaky lil FAKEOUT completed object, 
+        // fake completed levels object, 
         // used to show verifications under the "completed" section
         const { completed } = scoreMap[verifier];
         completed.push({
@@ -391,7 +391,7 @@ export async function fetchPacks(list) {
             packs = await packResult.json();
         } catch (e) {
             console.error(`failed to process packs: ${e}`)
-            packs = [422, e]
+            packs = ["err", e]
         }
         let users = [];
 
@@ -519,7 +519,7 @@ export async function fetchPacks(list) {
         return packs;
     } catch (e) {
         console.error(`failed to fetch packs: ${e}`)
-        return [422, e]
+        return ["err", e]
     }
 }
 
@@ -527,8 +527,16 @@ export async function fetchStaff() {
     try {
         const staffResults = await fetch(`${dir}/_staff.json`);
         const staff = await staffResults.json();
+
+        // add link to editor if there isn't one
+        for (const editor of staff) {
+            if (!editor.link)
+                editor.link = "https://laylist.pages.dev/#/leaderboard/user/" +
+                    editor.name.toLowerCase().replaceAll(" ", "_");
+        }
         return staff;
-    } catch {
+    } catch (e) {
+        console.error(`failed to fetch staff: ${e}`)
         return null;
     }
 }
