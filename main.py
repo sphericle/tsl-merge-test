@@ -1,4 +1,4 @@
-import json, requests, time
+import json, requests
 from dotenv import dotenv_values
 
 # get auth token
@@ -9,7 +9,7 @@ env = dotenv_values(".env")
 path = 'repos/layout-list/data/'
 
 # your pointercrate clone
-base_url = 'http://127.0.0.1:8001/'
+base_url = 'http://127.0.0.1:8000/'
 list_index_result = '_list.json'
 # levels with a name that starts with this will be skipped
 benchmark = '_'
@@ -21,10 +21,8 @@ with open(path + list_index_result) as json_file:
 
 
 for levelpath in list:
-    print(levelpath)
     # if the lvl is a divider
     if levelpath.startswith(benchmark):
-        print("Skipping...")
         continue
     
     try:
@@ -66,9 +64,6 @@ for levelpath in list:
                 }
             )
             
-            # avoid ratelimits
-            time.sleep(1)
-            
             # if the request did not result in a created demon
             if req.status_code != 201:
                 f = open(f"errors/error demon rank {rank}.json", "a")
@@ -101,7 +96,6 @@ for levelpath in list:
                             # in case the enjoyment is a string for some reason (TANGIIII!!!!!) convert it to integer and add it to the format
                             recordform['enjoyment'] = int(record['enjoyment'])
                             
-                    print(f'record #{recordi}: {record["user"]}')
                     req = requests.post(
                         base_url + 'api/v1/records', 
                         data=json.dumps(recordform), 
@@ -118,7 +112,7 @@ for levelpath in list:
                     if req.status_code != 200:
                         # the error could be because the player is spelt differently
                         # try to ask the server what the correct spelling should be
-                        print('failed, checking for duplicate name')
+                        print(req.status_code)
                         req2 = requests.get(
                             base_url + 'api/v1/players?name=' + record['user'],
                             headers={
@@ -131,7 +125,8 @@ for levelpath in list:
                         # load the response
                         playerinfo = json.loads(req2.content)
                         
-                        if record['user'] == "Hydraniac" and recordi == 1:
+                        # this is firing whenever it wants to for some reason?
+                        if record['user'] == "Hydraniac" and recordi == 1 and rank == 1:
                             print('this is the very first record, no players found (HYDRAAAAA)')
                             f = open(f"errors/error demon {id} record {recordi}.json", "a")
                             f.write('video not supported')
@@ -141,7 +136,6 @@ for levelpath in list:
                         # if the response returned a player
                         elif (len(playerinfo) > 0):
                             newplayer = playerinfo[0]['name']
-                            print(f'name found: {newplayer}, retrying...')
                             # use the first returned player's name in the record form
                             recordform['player'] = newplayer
                             
@@ -157,7 +151,7 @@ for levelpath in list:
                                 }
                             )
                             
-                            print(req3.status_code)
+                            print(f"same {req3.status_code}")
                             
                             # if the request still did not result in 200 OK
                             if req3.status_code != 200:
@@ -168,11 +162,7 @@ for levelpath in list:
                                 f.write(json.dumps(recordform))
                                 f.close()
                                 continue
-                        
-                    # avoid ratelimits
-                    time.sleep(1)
                             
-                    
         rank += 1
     except Exception as error:
         # what the hell
