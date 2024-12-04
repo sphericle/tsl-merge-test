@@ -1,18 +1,19 @@
 import json, requests
 from dotenv import dotenv_values
+from functions.formatting import *
+from functions.server import *
 
 # get auth token
 env = dotenv_values(".env")
 
-
 # this should be the path to the level data in the TSL template
 path = 'repos/layout-list/data/'
 
-# your pointercrate clone
-base_url = 'http://127.0.0.1:8000/'
 list_index_result = '_list.json'
+
 # levels with a name that starts with this will be skipped
 benchmark = '_'
+
 # first level in the list will be at pos 1
 rank = 1
 
@@ -21,6 +22,7 @@ with open(path + list_index_result) as json_file:
 
 
 for levelpath in list:
+    req = None
     # if the lvl is a divider
     if levelpath.startswith(benchmark):
         continue
@@ -33,44 +35,15 @@ for levelpath in list:
             # if its a divider and the first check didn't work for some reason
             if level['id'] == 0:
                 continue
-        
-            # format the level data into pointercrate's format
-            newform = {
-                'name': level['name'],
-                'position': rank,
-                'requirement': level['percentToQualify'],
-                'verifier': level['verifier'],
-                'level_id': level['id'],
-                'video': level['verification'] 
-            }
             
-            # conditional fields have to be done like this i think THanks Pythoin
-            if 'author' in level:
-                newform['publisher'] = level['author']
-                
-            # overwrite creator with publisher if creators array is empty (this is how the layout list does it)
-            newform['creators'] = [level['author']] if level['creators'] == [] else level['creators']
-            
-                
+            newform = lvl_to_pc(level, rank)
                 
             # post request to your pointercrate server's api, sending the new format and your auth
-            req = requests.post(
-                base_url + 'api/v2/demons', 
-                data=json.dumps(newform), 
-                headers={
-                    'Authorization': 'Bearer ' + env['AUTH'],
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            )
+            req = postLevel(newform)
             
             # if the request did not result in a created demon
             if req.status_code != 201:
-                f = open(f"errors/error demon rank {rank}.json", "a")
-                f.write(req.text)
-                f.write('\n\n')
-                f.write(json.dumps(newform))
-                f.close()
+                writeError(f"error demon rank {rank}.json", req.text)
                 continue
             else:   
                 # link will look like: api/v2/demons/{id}
@@ -82,91 +55,42 @@ for levelpath in list:
                 recordi = 0
                 for record in level['records']:
                     recordi += 1
-                    recordform = {
-                        'progress': record['percent'],
-                        'player': record['user'],
-                        'demon': id,
-                        'video': record['link'],
-                        'status': 'APPROVED'
-                    }
                     
-                    # if the enjoyment field exists and is not "?"
-                    if 'enjoyment' in record:
-                        if record['enjoyment'] != "?": # shut up
-                            # in case the enjoyment is a string for some reason (TANGIIII!!!!!) convert it to integer and add it to the format
-                            recordform['enjoyment'] = int(record['enjoyment'])
+                    recordform = record_to_pc(record, id)
                             
-                    req = requests.post(
-                        base_url + 'api/v1/records', 
-                        data=json.dumps(recordform), 
-                        headers={
-                            'Authorization': 'Bearer ' + env['AUTH'],
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        }
-                    )
-                    
-                    
+                    req = postRecord(recordform)
                     
                     # if the request did not result in 200 OK
                     if req.status_code != 200:
                         # the error could be because the player is spelt differently
                         # try to ask the server what the correct spelling should be
-                        print(req.status_code)
-                        req2 = requests.get(
-                            base_url + 'api/v1/players?name=' + record['user'],
-                            headers={
-                                'Authorization': 'Bearer ' + env['AUTH'],
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            }
-                        )
+                        req = getUser(record['user'])
                         
                         # load the response
-                        playerinfo = json.loads(req2.content)
+                        playerinfo = json.loads(req.content)
                         
-                        # this is firing whenever it wants to for some reason?
-                        if record['user'] == "Hydraniac" and recordi == 1 and rank == 1:
-                            print('this is the very first record, no players found (HYDRAAAAA)')
-                            f = open(f"errors/error demon {id} record {recordi}.json", "a")
-                            f.write('video not supported')
-                            f.write('\n\n')
-                            f.write(json.dumps(recordform))
-                            f.close()
-                        # if the response returned a player
-                        elif (len(playerinfo) > 0):
+                        if (len(playerinfo) > 0):
                             newplayer = playerinfo[0]['name']
                             # use the first returned player's name in the record form
                             recordform['player'] = newplayer
                             
                             # resubmit the record with the corrected name
                             # dont even try to tell me this is trash bc idc
-                            req3 = requests.post(
-                                base_url + 'api/v1/records', 
-                                data=json.dumps(recordform), 
-                                headers={
-                                    'Authorization': 'Bearer ' + env['AUTH'],
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json'
-                                }
-                            )
-                            
-                            print(f"same {req3.status_code}")
+                            req = postRecord(recordform)
                             
                             # if the request still did not result in 200 OK
-                            if req3.status_code != 200:
-                                print('failed again, logging...')
-                                f = open(f"errors/error demon {id} record {recordi}.json", "a")
-                                f.write(req3.text)
-                                f.write('\n\n')
-                                f.write(json.dumps(recordform))
-                                f.close()
-                                continue
-                            
+                            if req.status_code != 200:
+                                print('failed again, deleting video...')
+                                writeError(f"error video demon {id} record {recordi}.json", json.dumps(recordform))
+                                recordform['video'] = None
+                                
+                                req = postRecord(recordform)
+                                
+                                if req.status_code != 200:
+                                    print('failed again, writing error...')
+                                    writeError(f"error demon {id} record {recordi}.json", json.dumps(recordform))  
         rank += 1
     except Exception as error:
         # what the hell
         print('error, skipping file...')
-        f = open(f"errors/error file {levelpath}.json", "a")
-        f.write(str(error))
-        f.close()
+        writeError(f"error file {levelpath}.json", error)

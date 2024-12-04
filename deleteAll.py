@@ -7,10 +7,10 @@ env = dotenv_values(".env")
 
 i = 0
 
-while i < 100:
+while True:
     i += 1
-    print(i)
-    req = requests.delete(f'http://127.0.0.1:8000/api/v1/players/{i}', headers={
+    req = requests.delete(f'http://127.0.0.1:8000/api/v2/demons/{i}', headers={
         'Authorization': "Bearer " + env['AUTH']
     })
-    print(req.status_code)
+    
+    print(f"{i}: {req.status_code}")
