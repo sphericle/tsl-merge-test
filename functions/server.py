@@ -15,6 +15,12 @@ def postLevel(data):
         }
     )
     
+    if req.status_code != 201:
+        creatori = 0
+        for creator in data['creators']:
+            newuser = getUser(creator)
+            data['creators'][creatori] = newuser
+    
     return req
 
 def postRecord(data):
@@ -41,5 +47,10 @@ def getUser(name):
         }
     )
     
-    return req
-
+    # load the response
+    playerinfo = json.loads(req.content)
+    
+    if (len(playerinfo) > 0):
+        return playerinfo[0]['name']
+    else:
+        return None

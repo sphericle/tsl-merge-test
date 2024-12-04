@@ -1,4 +1,4 @@
-import requests
+import requests, json
 
 from dotenv import dotenv_values
 
@@ -7,10 +7,20 @@ env = dotenv_values(".env")
 
 i = 0
 
-while True:
-    i += 1
-    req = requests.delete(f'http://127.0.0.1:8000/api/v2/demons/{i}', headers={
-        'Authorization': "Bearer " + env['AUTH']
-    })
+preq = requests.get('http://127.0.0.1:8000/api/v2/demons', headers={
+    'Authorization': "Bearer " + env['AUTH']
+})
+
+json = json.loads(preq.content)
+
+if len(json) > 0:
     
-    print(f"{i}: {req.status_code}")
+    i = json[0]['id']
+
+    while True:
+        req = requests.delete(f'http://127.0.0.1:8000/api/v2/demons/{i}', headers={
+            'Authorization': "Bearer " + env['AUTH']
+        })
+        i += 1
+
+        print(f"{i}: {req.status_code}")

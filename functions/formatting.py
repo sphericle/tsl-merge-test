@@ -9,12 +9,18 @@ def lvl_to_pc(level, rank):
         'video': level['verification'] 
     }
     
+    if isinstance(level['id'], str):
+        newform['level_id'] = int(level['id'])
+        
+    
     # conditional fields have to be done like this i think THanks Pythoin
     if 'author' in level:
         newform['publisher'] = level['author']
-        
     # overwrite creator with publisher if creators array is empty (this is how the layout list does it)
-    newform['creators'] = [level['author']] if level['creators'] == [] else level['creators']
+    if level['creators'] == []:
+        newform['creators'] = [level['author']]
+    else:
+        newform['creators'] = level['creators']
     
     return newform
 
@@ -37,9 +43,11 @@ def record_to_pc(record, id):
     return recordform
 
 
-def writeError(name, txt):
-    f = open(f"errors/{name}.json", "a")
-    f.write(str(txt))
+def writeError(name, txt1, txt2 = None):
+    f = open(f"errors/{name}", "a")
+    f.write(str(txt1))
+    f.write('\n\n')
+    f.write(str(txt2))
     f.close()
-    
+    input('press enter to continue...')
     return 201
